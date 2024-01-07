@@ -456,24 +456,24 @@ determine_kernel_variant
 clear
 
 echo "===========remove unused kernels in rescue system========="
-for kver in $(find /lib/modules/* -maxdepth 0 -type d | grep -v "$(uname -r)" | cut -s -d "/" -f 4); do
-  apt purge --yes "linux-headers-$kver"
-  apt purge --yes "linux-image-$kver"
-done
+# for kver in $(find /lib/modules/* -maxdepth 0 -type d | grep -v "$(uname -r)" | cut -s -d "/" -f 4); do
+#  apt purge --yes "linux-headers-$kver"
+#  apt purge --yes "linux-image-$kver"
+# done
 
 echo "======= installing zfs on rescue system =========="
   echo "zfs-dkms zfs-dkms/note-incompatible-licenses note true" | debconf-set-selections  
 #  echo "y" | zfs
 # linux-headers-generic linux-image-generic
-  apt install --yes software-properties-common dpkg-dev dkms
-  rm -f "$(which zfs)"
-  rm -f "$(which zpool)"
-  echo -e "deb http://deb.debian.org/debian/ testing main contrib non-free\ndeb http://deb.debian.org/debian/ testing main contrib non-free\n" >/etc/apt/sources.list.d/bookworm-testing.list
-  echo -e "Package: src:zfs-linux\nPin: release n=testing\nPin-Priority: 990\n" > /etc/apt/preferences.d/90_zfs
-  apt update  
-  apt install -t testing --yes zfs-dkms zfsutils-linux
-  rm /etc/apt/sources.list.d/bookworm-testing.list
-  rm /etc/apt/preferences.d/90_zfs
+#  apt install --yes software-properties-common dpkg-dev dkms
+#  rm -f "$(which zfs)"
+#  rm -f "$(which zpool)"
+#  echo -e "deb http://deb.debian.org/debian/ testing main contrib non-free\ndeb http://deb.debian.org/debian/ testing main contrib non-free\n" >/etc/apt/sources.list.d/bookworm-testing.list
+#  echo -e "Package: src:zfs-linux\nPin: release n=testing\nPin-Priority: 990\n" > /etc/apt/preferences.d/90_zfs
+#  apt update  
+#  apt install -t testing --yes zfs-dkms zfsutils-linux
+#  rm /etc/apt/sources.list.d/bookworm-testing.list
+#  rm /etc/apt/preferences.d/90_zfs
   apt update
   export PATH=$PATH:/usr/sbin
   zfs --version
@@ -511,7 +511,7 @@ echo "======= create zfs pools and datasets =========="
   done
 
   if [[ ${#v_selected_disks[@]} -gt 1 ]]; then
-    pools_mirror_option=mirror
+    pools_mirror_option=raidz2
   else
     pools_mirror_option=
   fi
@@ -738,9 +738,10 @@ chroot_execute "echo options zfs zfs_arc_max=$((v_zfs_arc_max_mb * 1024 * 1024))
 echo "======= setting up grub =========="
 chroot_execute "echo 'grub-pc grub-pc/install_devices_empty   boolean true' | debconf-set-selections"
 chroot_execute "DEBIAN_FRONTEND=noninteractive apt install --yes grub-pc"
-for disk in ${v_selected_disks[@]}; do
-  chroot_execute "grub-install $disk"
-done
+chroot_execute "grub-install ${v_selected_disks[0]}"
+# for disk in ${v_selected_disks[@]}; do
+#  chroot_execute "grub-install $disk"
+# done
 
 chroot_execute "sed -i 's/#GRUB_TERMINAL=console/GRUB_TERMINAL=console/g' /etc/default/grub"
 chroot_execute "sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"net.ifnames=0\"|' /etc/default/grub"
